@@ -5,9 +5,9 @@
          xmlns="http://usefulinc.com/ns/doap#">
 
   <name xml:lang="en">gnome-network-displays</name>
-  <shortdesc xml:lang="en">GNOME Network Displays</shortdesc>
+  <shortdesc xml:lang="en">Network Displays</shortdesc>
   <description xml:lang="en">
-    GNOME Network Displays allows you to cast your desktop to a remote display. Currently
+    Network Displays allows you to cast your desktop to a remote display. Currently
     implemented is support for casting to Wi-Fi Display capable devices (a.k.a. Miracast).
   </description>
   <homepage rdf:resource="http://www.gnome.org/" />
