@@ -3,10 +3,11 @@
 	<id>org.gnome.NetworkDisplays.desktop</id>
 	<metadata_license>CC0-1.0</metadata_license>
 	<project_license>GPL-3.0-or-later</project_license>
-	<name>GNOME Network Displays</name>
+	<name>Network Displays</name>
 	<summary>Stream the desktop to Wi-Fi Display capable devices</summary>
 	<url type="homepage">https://gitlab.gnome.org/GNOME/gnome-network-displays</url>
 	<translation type="gettext">gnome-network-displays</translation>
+	<developer_name>Benjamin Berg</developer_name>
 	<screenshots>
 		<screenshot>
 			<image>https://gitlab.gnome.org/GNOME/gnome-network-displays/-/raw/master/data/appdata/device-list.png</image>
@@ -14,7 +15,7 @@
 	</screenshots>
 	<description>
 		<p>
-		GNOME Network Displays allows you to cast your desktop to a remote display. Currently
+		Network Displays allows you to cast your desktop to a remote display. Currently
 		implemented is support for casting to Wi-Fi Display capable devices (a.k.a. Miracast).
 		</p>
 	</description>
