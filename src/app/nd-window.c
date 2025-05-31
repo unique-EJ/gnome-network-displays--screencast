@@ -19,9 +19,11 @@
 #include <avahi-gobject/ga-client.h>
 #include <avahi-gobject/ga-service-browser.h>
 #include <glib/gi18n.h>
+#include <libgssdp/gssdp.h>
 #include <gst/base/base.h>
 #include <gst/gst.h>
 #include <libportal-gtk4/portal-gtk4.h>
+
 #include "gnome-network-displays-config.h"
 #include "nd-cc-provider.h"
 #include "nd-codec-install.h"
@@ -32,6 +34,7 @@
 #include "nd-sink-list-model.h"
 #include "nd-sink-row.h"
 #include "nd-wfd-mice-provider.h"
+#include "nd-wfd-mssdp-provider.h"
 #include "nd-window.h"
 
 struct _NdWindow
@@ -39,6 +42,7 @@ struct _NdWindow
   AdwApplicationWindow   parent_instance;
 
   GaClient              *avahi_client;
+  GSSDPClient           *gssdp_client;
   NdMetaProvider        *meta_provider;
   NdNMDeviceRegistry    *nm_device_registry;
 
@@ -467,8 +471,10 @@ gnome_nd_window_constructed (GObject *obj)
   G_OBJECT_CLASS (gnome_nd_window_parent_class)->constructed (obj);
 
   g_autoptr(GError) error = NULL;
+  g_autoptr(NdDummyProvider) dummy_provider = NULL;
   g_autoptr(NdWFDMiceProvider) mice_provider = NULL;
   g_autoptr(NdCCProvider) cc_provider = NULL;
+  g_autoptr(NdWFDMssdpProvider) mssdp_provider = NULL;
   NdWindow *self = ND_WINDOW (obj);
 
   self->cancellable = g_cancellable_new ();
@@ -476,34 +482,63 @@ gnome_nd_window_constructed (GObject *obj)
 
   if (!ga_client_start (self->avahi_client, &error))
     {
-      g_warning ("NdWindow: Failed to start Avahi Client");
+      g_warning ("NdWindow: Failed to start Avahi client");
       if (error != NULL)
-        g_warning ("NdWindow: Error: %s", error->message);
+        g_warning ("NdWindow: Avahi client error: %s", error->message);
+
       return;
     }
 
-  g_debug ("NdWindow: Got avahi client");
+  g_debug ("NdWindow: Got Avahi client");
 
   mice_provider = nd_wfd_mice_provider_new (self->avahi_client);
   cc_provider = nd_cc_provider_new (self->avahi_client);
 
   if (!nd_wfd_mice_provider_browse (mice_provider, error) || !nd_cc_provider_browse (cc_provider, error))
     {
-      g_warning ("NdWindow: Avahi client failed to browse: %s", error->message);
+      g_warning ("NdWindow: Avahi client failed to browse");
+      if (error)
+        g_warning ("NdWindow: Avahi browser error: %s", error->message);
+
       return;
     }
 
   g_debug ("NdWindow: Got avahi browser");
-  nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (mice_provider));
-  nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (cc_provider));
+
+  self->gssdp_client = gssdp_client_new_for_address(NULL, 0, GSSDP_UDA_VERSION_UNSPECIFIED, &error);
+  if (self->gssdp_client == NULL)
+    {
+      g_warning ("NdDaemon: Failed to start GSSDP client");
+      if (error)
+        g_warning ("NdDaemon: GSSDP client error: %s", error->message);
+
+      return;
+    }
+
+  mssdp_provider = nd_wfd_mssdp_provider_new (self->gssdp_client);
+
+  if (!nd_wfd_mssdp_provider_browse (mssdp_provider, error))
+    {
+      g_warning ("NdDaemon: GSSDP client failed to browse");
+      if (error)
+        g_warning ("NdDaemon: GSSDP browser error: %s", error->message);
+      return;
+    }
+  g_debug ("NdDaemon: Got GSSDP browser");
+
+  /* add providers */
   if (g_strcmp0 (g_getenv ("NETWORK_DISPLAYS_DUMMY"), "1") == 0)
     {
-      g_autoptr(NdDummyProvider) dummy_provider = NULL;
-
       g_debug ("Adding dummy provider");
       dummy_provider = nd_dummy_provider_new ();
       nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (dummy_provider));
     }
+
+  self->nm_device_registry = nd_nm_device_registry_new (self->meta_provider);
+
+  nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (mice_provider));
+  nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (cc_provider));
+  nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (mssdp_provider));
 }
 
 static void
@@ -632,8 +667,6 @@ gnome_nd_window_init (NdWindow *self)
                            (GCallback) on_meta_provider_has_provider_changed_cb,
                            self,
                            G_CONNECT_SWAPPED);
-
-  self->nm_device_registry = nd_nm_device_registry_new (self->meta_provider);
 
   self->connect_sink_list_model = g_list_store_new (ND_TYPE_SINK);
   self->stream_sink_list_model = g_list_store_new (ND_TYPE_SINK);

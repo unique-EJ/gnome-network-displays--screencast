@@ -10,6 +10,7 @@ gnome_nd_common_sources = [
   'nd-meta-provider.c',
   'nd-wfd-mice-sink.c',
   'nd-wfd-mice-provider.c',
+  'nd-wfd-mssdp-provider.c',
   'nd-cc-sink.c',
   'nd-cc-provider.c',
   'nd-wfd-p2p-sink.c',
@@ -32,6 +33,7 @@ gnome_nd_common_sources += gnome.mkenums_simple(
 gnome_nd_common_deps = [
   dependency('avahi-client'),
   dependency('avahi-gobject'),
+  dependency('gssdp-1.6'),
   dependency('gio-2.0', version: '>= 2.50'),
   dependency('gstreamer-1.0', version: '>= 1.14'),
   dependency('gstreamer-pbutils-1.0', version: '>= 1.14'),

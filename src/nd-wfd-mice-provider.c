@@ -406,15 +406,13 @@ nd_wfd_mice_provider_new (GaClient *client)
 gboolean
 nd_wfd_mice_provider_browse (NdWFDMiceProvider *provider, GError * error)
 {
-  GaServiceBrowser * avahi_browser;
-
-  avahi_browser = ga_service_browser_new ("_display._tcp");
-
   if (provider->avahi_client == NULL)
     {
       g_warning ("NdWFDMiceProvider: No Avahi client found");
       return FALSE;
     }
+
+  GaServiceBrowser *avahi_browser = ga_service_browser_new ("_display._tcp");
 
   g_signal_connect (avahi_browser,
                     "new-service",

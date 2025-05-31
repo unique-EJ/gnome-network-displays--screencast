@@ -18,6 +18,7 @@
 
 #include <avahi-gobject/ga-client.h>
 #include <avahi-gobject/ga-service-browser.h>
+#include <libgssdp/gssdp.h>
 #include <gst/gst.h>
 #include <glib-object.h>
 
@@ -28,6 +29,7 @@
 #include "nd-nm-device-registry.h"
 #include "nd-dummy-provider.h"
 #include "nd-wfd-mice-provider.h"
+#include "nd-wfd-mssdp-provider.h"
 #include "nd-cc-provider.h"
 
 struct _NdDaemon
@@ -35,6 +37,7 @@ struct _NdDaemon
   GApplication        parent_instance;
 
   GaClient           *avahi_client;
+  GSSDPClient        *gssdp_client;
   NdNMDeviceRegistry *nm_device_registry;
   NdMetaProvider     *meta_provider;
   NdManager          *manager;
@@ -51,7 +54,57 @@ nd_daemon_constructed (GObject *obj)
   g_autoptr(NdDummyProvider) dummy_provider = NULL;
   g_autoptr(NdWFDMiceProvider) mice_provider = NULL;
   g_autoptr(NdCCProvider) cc_provider = NULL;
+  g_autoptr(NdWFDMssdpProvider) mssdp_provider = NULL;
 
+  self->avahi_client = ga_client_new (GA_CLIENT_FLAG_NO_FLAGS);
+
+  if (!ga_client_start (self->avahi_client, &error))
+    {
+      g_warning ("NdDaemon: Failed to start Avahi client");
+      if (error != NULL)
+        g_warning ("NdDaemon: Avahi client error: %s", error->message);
+
+      return;
+    }
+
+  g_debug ("NdDaemon: Got Avahi client");
+
+  mice_provider = nd_wfd_mice_provider_new (self->avahi_client);
+  cc_provider = nd_cc_provider_new (self->avahi_client);
+
+  if (!nd_wfd_mice_provider_browse (mice_provider, error) || !nd_cc_provider_browse (cc_provider, error))
+    {
+      g_warning ("NdDaemon: Avahi client failed to browse");
+      if (error)
+        g_warning ("NdDaemon: Avahi browser error: %s", error->message);
+
+      return;
+    }
+
+  g_debug ("NdDaemon: Got avahi browser");
+
+  self->gssdp_client = gssdp_client_new_for_address(NULL, 0, GSSDP_UDA_VERSION_UNSPECIFIED, &error);
+  if (self->gssdp_client == NULL)
+    {
+      g_warning ("NdDaemon: Failed to start GSSDP client");
+      if (error)
+        g_warning ("NdDaemon: GSSDP client error: %s", error->message);
+
+      return;
+    }
+
+  mssdp_provider = nd_wfd_mssdp_provider_new (self->gssdp_client);
+
+  if (!nd_wfd_mssdp_provider_browse (mssdp_provider, error))
+    {
+      g_warning ("NdDaemon: GSSDP client failed to browse");
+      if (error)
+        g_warning ("NdDaemon: GSSDP browser error: %s", error->message);
+      return;
+    }
+  g_debug ("NdDaemon: Got GSSDP browser");
+
+  /* add providers */
   if (g_strcmp0 (g_getenv ("NETWORK_DISPLAYS_DUMMY"), "1") == 0)
     {
       g_debug ("Adding dummy provider");
@@ -61,30 +114,9 @@ nd_daemon_constructed (GObject *obj)
 
   self->nm_device_registry = nd_nm_device_registry_new (self->meta_provider);
 
-  self->avahi_client = ga_client_new (GA_CLIENT_FLAG_NO_FLAGS);
-
-  if (!ga_client_start (self->avahi_client, &error))
-    {
-      g_warning ("NdDaemon: Failed to start Avahi Client");
-      if (error != NULL)
-        g_warning ("NdDaemon: Error: %s", error->message);
-      return;
-    }
-
-  g_debug ("NdDaemon: Got avahi client");
-
-  mice_provider = nd_wfd_mice_provider_new (self->avahi_client);
-  cc_provider = nd_cc_provider_new (self->avahi_client);
-
-  if (!nd_wfd_mice_provider_browse (mice_provider, error) || !nd_cc_provider_browse (cc_provider, error))
-    {
-      g_warning ("NdDaemon: Avahi client failed to browse: %s", error->message);
-      return;
-    }
-
-  g_debug ("NdDaemon: Got avahi browser");
   nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (mice_provider));
   nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (cc_provider));
+  nd_meta_provider_add_provider (self->meta_provider, ND_PROVIDER (mssdp_provider));
 }
 
 static void
