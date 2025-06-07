@@ -353,15 +353,13 @@ nd_cc_provider_new (GaClient *client)
 gboolean
 nd_cc_provider_browse (NdCCProvider *provider, GError *error)
 {
-  GaServiceBrowser *avahi_browser;
-
-  avahi_browser = ga_service_browser_new ("_googlecast._tcp");
-
   if (provider->avahi_client == NULL)
     {
       g_warning ("NdCCProvider: No Avahi client found");
       return FALSE;
     }
+
+  GaServiceBrowser *avahi_browser = ga_service_browser_new ("_googlecast._tcp");
 
   g_signal_connect (avahi_browser,
                     "new-service",
