@@ -17,13 +17,19 @@ Build
 
 To build it locally:
 
-- Install build dependencies (e.g. on Fedora with `dnf build-dep gnome-network-displays`, on Ubuntu based system with `apt install libgstrtspserver-1.0-dev libgstreamer-plugins-base1.0-dev libavahi-client-dev libavahi-gobject-dev libgtk-3-dev libnm-dev libpulse-dev libprotobuf-c-dev libjson-glib-dev libsoup-3.0-dev libportal-gtk4-dev libgtk-4-dev libadwaita-1-dev`)
-- Install `meson`
-- Clone the repository
-- `cd gnome-network-displays`
-- `meson build`
-- `cd build`
-- `meson install`
+On a Ubuntu based system
+------------------------
+
+```
+# Change to be in "Downloads" in the home directory, clone the repository (needs "Git" installed), change to be in the cloned repository, install build dependencies & meson (with superuser privileges), build it with meson and install, change back to the directory before this.
+
+cd ~/Downloads/; git clone https://gitlab.gnome.org/GNOME/gnome-network-displays.git gnome-network-displays-source; cd gnome-network-displays-source; sudo apt install --yes libgstrtspserver-1.0-dev libgstreamer-plugins-base1.0-dev libavahi-client-dev libavahi-gobject-dev libgtk-3-dev libnm-dev libpulse-dev libprotobuf-c-dev libjson-glib-dev libsoup-3.0-dev libportal-gtk4-dev libgtk-4-dev libadwaita-1-dev meson; meson build; cd build; meson install; cd -; 
+```
+
+On a Fedora based system
+------------------------
+
+Install `git` and `meson` if they are not. Change the `apt install`\[packages]`;` in Ubuntu build to `dnf build-dep gnome-network-displays`.
 
 Devices
 =======
