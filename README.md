@@ -28,7 +28,7 @@ On a Ubuntu based system
 # build it with meson and install (with superuser privileges),
 # change back to the directory before this.
 
-cd ~/Downloads/; git clone https://gitlab.gnome.org/GNOME/gnome-network-displays.git gnome-network-displays-source; cd gnome-network-displays-source; sudo apt install --yes libgstrtspserver-1.0-dev libgstreamer-plugins-base1.0-dev libavahi-client-dev libavahi-gobject-dev libgtk-3-dev libnm-dev libpulse-dev libprotobuf-c-dev libjson-glib-dev libsoup-3.0-dev libportal-gtk4-dev libgtk-4-dev libadwaita-1-dev meson; meson setup build; cd build; sudo meson setup install; cd -; 
+cd ~/Downloads/; git clone https://gitlab.gnome.org/GNOME/gnome-network-displays.git gnome-network-displays-source; cd gnome-network-displays-source; sudo apt install --yes libgstrtspserver-1.0-dev libgstreamer-plugins-base1.0-dev libavahi-client-dev libavahi-gobject-dev libgtk-3-dev libnm-dev libpulse-dev libprotobuf-c-dev libjson-glib-dev libsoup-3.0-dev libportal-gtk4-dev libgtk-4-dev libadwaita-1-dev meson; meson setup build; cd build; sudo meson install; cd -; 
 ```
 
 On a Fedora based system
